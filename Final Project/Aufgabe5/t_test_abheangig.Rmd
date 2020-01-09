@@ -1,0 +1,172 @@
+---
+title: "t-Tests für unabhängige Stichproben"
+author: "Ozgur Polat und Kathrin Einzmann"
+date: "09 01 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(Rcmdr)
+library(RcmdrMisc)
+#library(RcmdrPlugin.plotByGroup)
+library(multcomp)
+library(foreign)
+
+PULSE <- read.csv("RepeatedPulse.csv")
+
+```
+
+## Datensatz: RepeatedPulse.csv
+
+Var 1 = Pulsfrequenz (abhängig, intervallskaliert)
+
+Var 2 = Tageszeit (morgens/abends, unabhängig nominalskaliert)
+
+1. Hypothese:
+==============
+
+H1: Es gibt einen Unterschied in der Herzfrequenz zwischen den beiden Zeitpunkten (morgens und abends). 
+
+H0: Es gibt keinen Unterschied in der Herzfrequenz zwischen den beiden Zeitpunkten (morgens und abends).
+
+
+2.	Voraussetzungen des t-Tests für abhängige Stichproben
+=========================================================
+
+• Die abhängige Variable ist intervallskaliert.
+
+• Die unabhängige Variable ist nominalskaliert und hat zwei Ausprägungen. Unsere unabhängige Variable muss kategorial sein, daher nominalskaliert und muss zwei Ausprägungen haben. Die beiden Ausprägungen beziehen auf die beiden Gruppen, die wir vergleichen und sind oft, aber nicht zwangsläufig, Messzeitpunkte (z.B. Messzeitpunkt #1 verglichen mit Messzeitpunkt #2). 
+
+• Normalverteilung: Der gepaarte t-Test erwartet nicht, dass die Daten in den beiden Gruppen normalverteilt sein müssen, allerdings aber die Differenzen beider Gruppen. Genauer gesagt, bezieht sich diese Annahme auf die Residuen und nicht auf die Daten selbst. 
+
+• Abhängigkeit der Messungen: Der verbundene t-Test vergleicht zwei Gruppen. In der Regel wird dieselbe Person zu zwei unterschiedlichen Zeitpunkten vergleichen. Die Abhängigkeit muss vorher gegeben sein. 
+
+3.	Grundlegende Konzepte: Was ist t-Test für abhängige Stichproben?
+====================================================================
+
+Der t-Test für abhängige Stichproben überprüft, ob die Mittelwerte zweier abhängiger/gepaarter Stichproben verschieden sind.
+
+Die Fragestellung des t-Tests für abhängige Stichproben wird oft so verkürzt: "Unterscheiden sich die Mittelwerte von zwei abhängigen Stichproben?"
+
+4.	Deskriptive Statistiken und Korrelation
+===========================================
+
+### Normalverteilung
+```{r}
+library(dplyr)
+morning<- PULSE%>% filter(Time=="morning")
+evening <- PULSE%>% filter(Time=="evening")
+
+m_pulse <- (filter(PULSE, Time=="morning")$Pulse)
+e_pulse <- (filter(PULSE, Time=="evening")$Pulse)
+
+diff_pulse <- e_pulse - m_pulse
+
+hist(m_pulse, xlab = "Puls am Morgen", ylab = "Häufigkeit", col="gold", nclass = 5)
+hist(e_pulse, xlab = "Puls am Abend", ylab = "Häufigkeit", col="lightblue", nclass = 5)
+hist(diff_pulse, xlab = "Differenz: Puls am Morgen ~ Abend", ylab = "Häufigkeit", col = "pink", nclass = 5)
+
+```
+
+Ergebnis: Die beiden Stichproben sind nicht normalverteilt. Es soll aber geprüft werden, ob die Verteilung der Differenzen zwischen den beiden Messwerten normal ist. Dies trifft zu, die Differenzen sind normalverteilt.
+
+### Boxplots
+```{r}
+
+boxplot(morning$Pulse,evening$Pulse,names=c("Morgen","Abends"), col=c('powderblue', 'mistyrose'),main="Puls")
+
+```
+Der Boxplot zeigt, dass sowohl der Rechnungsbetrag als auch das Trinkgeld einige Ausreißer nach oben haben.
+
+<--scatterplot(m_pulse,e_pulse, main = "Morgenpuls ~ Abendpuls",xlab = "Morgenpuls", ylab = "Abendpuls",
+pch = 21, frame = FALSE, col='darkblue',regLine=TRUE)
+
+```{r}
+
+plot(m_pulse,e_pulse, main = "Morgenpuls ~ Abendpuls",xlab = "Morgenpuls", ylab = "Abendpuls",
+pch = 21, frame = FALSE, col='darkblue')
+abline(lm( e_pulse ~ m_pulse, data = PULSE), col = "orange")
+
+```
+Es zeigt sich augenscheinlich eine schwach positive lineare Abhängigkeit zwischen den Werten zu den beiden Tageszeiten.
+
+### Korrelation
+
+```{r}
+cor <- cor.test(x=morning$Pulse, y= evening$Pulse, method = "pearson")
+cor
+names(cor)
+r <- cor$estimate
+r
+cor$p.value
+
+```
+
+Ergebnis der Korrelationsanalyse: Die Werte für den Puls zu den beiden Messzeitpunkten korrelieren für ein Fehlerniveau alpha<=0.05 mit p=0.7821 nicht signifikant (r= 0.057, n=26). Die fehlenden Korrelationswerte sind Versuchsdesign bedingt, da sie nicht sauber miteinander verbunden ist.
+
+```{r}
+library(abind, pos=24)
+library(e1071, pos=25)
+numSummary(PULSE[,"Pulse", drop=FALSE], groups=PULSE$Time, statistics=c("mean", "sd", "IQR", "quantiles", "skewness", "kurtosis"), quantiles=c(0,.25,.5,.75,1), type="2")
+
+```
+
+Ergebnis von Korrelationsanalyse: Die Werte für den Puls zu den beiden Messzeitpunkten korrelieren für ein Fehlerniveau alpha<=0.05 mit p=0.7821 nicht signifikant (r= 0.057, n=26).
+
+Erfüllte Voraussetzungen:
+
+• Die abhängige Variable Puls ist intervallskaliert. 
+
+• Die unabhängige Variable Tageszeit ist nominalskaliert und hat zwei Ausprägungen (morgens/abends). 
+
+• Normalverteilung: Der gepaarte t-Test erwartet nicht, dass die Daten in den beiden Gruppen normalverteilt sein müssen, allerdings aber die Differenzen beider Gruppen. Dies ist gegeben (siehe Histogramm der Differenzen)
+
+• Abhängigkeit der Messungen: Der verbundene t-Test vergleicht hier die zwei Zeitpunkte morgens und abends. Die Abhängigkeit ist daher gegeben.
+
+5.	Ergebnisse des t-Tests für abhängige Stichproben
+====================================================
+
+```{r}
+t_test <- with(PULSE, (t.test(m_pulse, e_pulse, alternative='two.sided', conf.level=.95, 
+  paired=TRUE)))
+
+t_test
+
+```
+Die Teststatistik beträgt t = -6.3286 und der zugehörige Signifikanzwert p = .000. Damit ist der Unterschied signifikant: Die Mittelwerte des Pulses zu den beiden Messzeitpunkten (Morgens und Abends) unterscheiden sich (t = -6.3286, p = .000, n = 26).
+
+6.	Berechnung der Effektstärk
+==============================
+
+Um die Bedeutsamkeit eines Ergebnisses zu beurteilen, werden Effektstärken berechnet. Im Beispiel ist der Mittelwertsunterschied zwar signifikant, doch es stellt sich die Frage, ob der Unterschied gross genug ist, um ihn als bedeutend einzustufen.
+
+Es gibt verschiedene Arten die Effektstärke zu messen. Zu den bekanntesten zählen die Effektstärke von Cohen (d) und der Korrelationskoeffizient (r) von Pearson. Der Korrelationskoeffizient eignet sich sehr gut, da die Effektstärke dabei immer zwischen 0 (kein Effekt) und 1 (maximaler Effekt) liegt. Wenn sich jedoch die Gruppen hinsichtlich ihrer Grösse stark unterscheiden, wird empfohlen, d von Cohen zu wählen, da r durch die Grössenunterschiede verzerrt werden kann.
+
+```{r}
+t_value <- t_test$statistic
+t_value
+
+df <- t_test$parameter
+df
+
+R <- sqrt(t_value^2/(t_value^2+df))
+R
+
+```
+Zur Beurteilung der Grösse des Effektes dient die Einteilung von Cohen (1992):
+
+r = .10 entspricht einem schwachen Effekt
+r = .30 entspricht einem mittleren Effekt
+r = .50 entspricht einem starken Effekt
+
+Damit entspricht eine Effektstärke von 0,78 einem starken Effekt.
+
+
+7.	Eine Aussage
+================
+Es zeigt sich, dass die Herzfrequenz gemessen zu zwei Zeitpunkten (morgens und abends) sich statistisch signifikant unterscheiden (t = -6.3286, p = .000, n = 26). Der Morgenpuls fällt niedriger aus (Mittelwert = 72.2351, SD = 1.92) als der Abendpuls (M = 75.69, SD = 2.13). Die Effektstärke nach Cohen (1992) liegt bei r = 0,785 und entspricht damit einem starken Effekt.H0 wird somit abgelehnt und H1 angenommen.
+
+
+

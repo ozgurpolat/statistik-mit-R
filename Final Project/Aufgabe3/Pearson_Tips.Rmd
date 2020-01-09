@@ -1,0 +1,200 @@
+---
+title: "Pearson Test"
+author: "Ozgur Polat und Kathrin Einzmannt"
+date: "08 01 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readxl)
+library(Rcmdr)
+library(RcmdrMisc)
+#library(RcmdrPlugin.plotByGroup)
+library(multcomp)
+library(foreign)
+
+TIPS <- read.csv("tips.csv")
+
+```
+
+## Datensatz:
+
+Var 1 = total bill (gezahlten Rechnung, ist intervallskaliert)
+
+Var 2 = tip (Trinkgeld, ist intervallskaliert)
+
+
+1. Hypothese:
+==============
+
+H1: Es gibt einen Zusammenhang zwischen der gesamten Rechnung und dem Trinkgeld 
+
+H0: Es gibt keinen Zusammenhang zwischen der gesamten Rechnung und dem Trinkgeld 
+
+
+2. Voraussetzungen des Pearson-Tests
+=====================================
+
+• Die Variablen sind mindestens intervallskaliert.
+
+• Die Variablen sind normalverteilt (n>30) 
+
+• Der untersuchte Zusammenhang zwischen den Variablen muss linear sein.
+
+
+3. Grundlegende Konzepte: Was ist Pearson?
+==========================================
+
+Die Korrelation nach Bravais-Pearson gibt die Stärke der linearen Beziehung zwischen zwei intervallskalierten Variablen an. Der Korrelationskoeffizient gibt an, ob es eine positive, negative oder keine Beziehung gibt und in welcher Stärke die linearen Beziehung vorliegt. Der Korrelationskoeffizient r kann Werte zwischen -1 und +1 annehmen und ist unabhängig von der Maßeinheit. Ein Wert von -1 beschreibt eine perfekt negative Korrelation und ein Wert von +1 beschreibt eine perfekt positive Korrelation. Ist r = 0, besteht kein linearer Zusammenhang zwischen den Variablen. Da stets der Zusammenhang zwischen zwei Variablen untersucht wird, wird von einem "bivariaten Zusammenhang" gesprochen. Zwei Variablen hängen dann linear zusammen, wenn sie linear miteinander variieren (also kovariieren).
+
+4.	Grafische Veranschaulichung des Zusammenhangs
+==================================================
+
+```{r}
+
+plot(TIPS[2:3])
+
+```
+
+Normalverteilung
+================
+```{r}
+library(reshape2)
+library(ggplot2)
+
+ggplot(TIPS, aes(x = total_bill)) +
+geom_histogram(color = "black", fill = "gold")
+
+ggplot(TIPS, aes(x = tip )) +
+geom_histogram(color = "black", fill = "lightblue")
+
+```
+
+Es liegt augenscheinlich eine Normalverteilung vor. Die Ränder sind kleiner als die Mitte.
+
+Streudiagramm
+=============
+
+```{r}
+scatterplot(total_bill~tip, regLine=TRUE, smooth=FALSE, boxplots=FALSE, jitter=list(x=1, y=1), 
+  by.groups=FALSE, data=TIPS)
+
+scatterplot(tip~total_bill, regLine=TRUE, smooth=FALSE, boxplots=FALSE, jitter=list(x=1, y=1), 
+  by.groups=FALSE, data=TIPS)
+
+```
+
+Das Streudiagramm zeigt eine tendenziell positive lineare Beziehung zwischen den beiden Variablen. 
+
+Die Voraussetzungen sind gegeben:
+
+• Es handelt sich um eine Normalverteilung. 
+
+• Variablen sind intervallskaliert
+
+• Der untersuchte Zusammenhang zwischen den Variablen ist (positiv) linear.
+
+Boxplots
+========
+```{r}
+
+ggplot(TIPS, aes(x=X, y = total_bill )) +
+geom_boxplot()
+
+ggplot(TIPS, aes(x=X, y = tip )) +
+geom_boxplot()
+
+boxplot(TIPS[2:3],names = c("Rechnungsbetrag","Trinkgeld"), col=c('powderblue', 'mistyrose'))
+
+```
+Der Boxplot zeigt, dass sowohl der Rechnungsbetrag als auch das Trinkgeld einige Ausreißer nach oben haben.
+
+
+5.	Deskriptive Statistik
+=========================
+
+```{r}
+library(abind, pos=24)
+library(e1071, pos=25)
+numSummary(TIPS[,c("total_bill", "tip"), drop=FALSE], statistics=c("mean", "sd", 
+  "se(mean)", "IQR", "quantiles", "skewness", "kurtosis"), quantiles=c(0,.25,.5,.75,1), type="2")
+
+
+```
+Im Mittel liegt der Rechnungsbetrag bei \$19,8 mit Standardabweichung von \$8,9 und die Höhe des Trinkgeldes im Mittel bei \$3,0 mit Standardabweichung von \$1,4.
+
+6.	Ergebnisse der Korrelationsanalyse
+======================================
+
+## Correlation
+```{r}
+pearson_cr <- rcorr.adjust(TIPS[, c("total_bill", "tip")], type = "pearson", use = "complete")
+pearson_cr
+
+```
+
+Es wird ersichtlich, dass ein Zusammenhang vorliegt zwischen dem Rechnungsbetrages und des Trinkgeldes (r = .676, p = .000, n = 244). Da r einen positiven Wert aufweist, kann von einem positiven linearen Zusammenhang ausgegangen werden. Das bedeutet: Je höher der Rechnungsbetrag, desto höher das Trinkgeld. Bzw. Je höher das Trinkgeld, desto höher der Rechnungsbetrag.
+
+7. Berechnung des Bestimmtheitsmasses
+======================================
+
+```{r}
+pearson_cr$R
+
+A <- pearson_cr$R[1]
+
+r <- A$r[2,1]
+
+r
+
+```  
+
+```{r}
+
+r_sq <- A$r[2,1]^2
+
+r_sq
+
+```
+Aus der Korrelation lässt sich durch Quadrieren das Bestimmtheitsmass berechnen:
+
+Bestimmtheitsmass = r²
+
+Für das Beispiel ergibt dies:
+
+r²  = 0.6757^2 = 0.4566
+
+Wird dieser Wert mit 100 multipliziert, so ergibt sich ein Prozentwert. Dieser gibt an, welcher Anteil der Varianz in beiden Variablen durch gemeinsame Varianzquellen determiniert wird. Für das vorliegende Beispiel beträgt der Anteil der gemeinsamen Varianz 45.66%.
+
+8. Berechnung der Effektstärk
+=============================
+
+Um die Bedeutsamkeit eines Ergebnisses zu beurteilen, werden Effektstärken berechnet. Im Beispiel ist die Korrelation der beiden Variablen signifikant, doch es stellt sich die Frage, ob der Zusammenhang gross genug ist, um ihn als bedeutend einzustufen. Der Korrelationskoeffizient r von Bravais-Pearson stellt selbst ein Mass für die Effektstärke dar.
+
+Um zu bestimmen, wie gross der gefundene Zusammenhang ist, kann man sich an der Einteilung von Cohen (1992) orientieren:
+
+r = .10 entspricht einem schwachen Effekt
+
+r = .30 entspricht einem mittleren Effekt
+
+r = .50 entspricht einem starken Effekt
+
+Damit entspricht ein Korrelationskoeffizient von 0.46 einem starken Effekt.
+
+7.	Aussage
+================
+
+gezahlten Rechnung und dem Trinkgeld korrelieren signifikant (r = 0.46, p = .000, n = 244). Je höher die gesamte Rechnung, desto höher das Trinkgeld oder je höher das Trinkgeld, desto höher die gesamte Rechnung. Ergebnis 45.66% der Variation der gemeinsamen Varianz kann durch die Länge und Breite der Blütenblätter erklärt werden. Nach Cohen (1992) ist dies ein starker Effekt.  
+
+Die alternative Hypothese kann akzeptiert werden. Die Nullhypothese wird abgelehnt.
+
+Es wird ersichtlich, dass ein signifikanter Zusammenhang zwischen dem Rechnungsbetrag und dem Trinkgeld vorliegt (r = .676, p = .000, n = 244). Da r einen positiven Wert aufweist, kann von einem positiven linearen Zusammenhang ausgegangen werden. Das bedeutet: Je höher der Rechnungsbetrag, desto höher das Trinkgeld. Bzw. Je höher das Trinkgeld, desto höher der Rechnungsbetrag.
+
+Im Mittel liegt der Rechnungsbetrag bei \$19,8 mit Standardabweichung von \$8,9 und die Höhe des Trinkgeldes im Mittel bei \$3,0 mit Standardabweichung von \$1,4.
+
+Das Bestimmtheitsmass r² ist 0.46. Wird dieser Wert mit 100 multipliziert, so ergibt sich ein Prozentwert. Dieser gibt an, welcher Anteil der Varianz in beiden Variablen durch gemeinsame Varianzquellen determiniert wird. Für das vorliegende Beispiel beträgt der Anteil der gemeinsamen Varianz 45.66%.
+
+Dabei handelt es sich nach Cohen (1992) um einen starken Effekt mit r= 0.68. Die alternative Hypothese kann akzeptiert werden. Die Nullhypothese wird abgelehnt. 
+
+

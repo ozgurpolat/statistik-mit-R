@@ -1,0 +1,201 @@
+---
+title: "t-Tests für unabhängige Stichproben"
+author: "Ozgur Polat und Kathrin Einzmann"
+date: "08 01 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readxl)
+library(Rcmdr)
+library(RcmdrMisc)
+#library(RcmdrPlugin.plotByGroup)
+library(multcomp)
+library(foreign)
+
+TIPS <- read.csv("tips.csv")
+
+```
+
+## Datensatz:
+
+Var 1 = tip (abhängige Variable, Trinkgeld ist intervallskaliert)
+
+Var 2 = sex (unabhängige Variable, Geschlecht ist unabhängig )
+
+
+1. Hypothese:
+==============
+
+H1: Der Mittelwert der gezahlten Trinkgelder von männlichen Kunden unterscheidet sich vom Mittelwert der gezahlten Trinkgelder von weiblichen Kunden
+
+H0: Der Mittelwert der gezahlten Trinkgelder von männlichen Kunden unterscheidet sich nicht vom Mittelwert der gezahlten Trinkgelder von weiblichen Kunden.
+
+
+2.	Voraussetzungen des t-Tests für unabhängige Stichproben
+===========================================================
+
+• Die abhängige Variable ist intervallskaliert.
+
+• Es liegt eine unabhängige Variable vor, mittels der die beiden zu vergleichenden Gruppen gebildet werden
+
+• Das untersuchte Merkmal ist in den Grundgesamtheiten der beiden Gruppen normalverteilt
+
+• Homogenität der Varianzen: Die Gruppen kommen aus Grundgesamtheiten mit annähernd identischer Varianz (siehe Levene-Test)
+
+• Die einzelnen Messwerte sind voneinander unabhängig (das Verhalten einer Versuchsperson hat keinen Einfluss auf das Verhalten einer anderen)
+
+3.	Grundlegende Konzepte: Was ist t-Test für unabhängige Stichproben?
+======================================================================
+
+Der t-Test für unabhängige Stichproben testet, ob die Mittelwerte zweier unabhängiger Stichproben verschieden sind.
+
+Die Fragestellung des t-Tests für unabhängige Stichproben wird oft so verkürzt:
+"Unterscheiden sich die Mittelwerte zweier unabhängiger Stichproben?"
+
+### 3.1 Beispiele für mögliche Fragestellungen
+
+Sinkt die Verkehrsbelastung (Anzahl Fahrzeuge pro Stunde) in der Hauptverkehrszeit in einem Dorf nach dem Bau einer Umfahrungsstrasse?
+
+Unterscheiden sich Personen mit selbstständiger oder unselbständiger Tätigkeit bezüglich ihrer Zufriedenheit mit ihrer beruflichen Situation?
+
+Gibt es einen Unterschied in der durchschnittlichen Anzahl Einbrüche in Häuser mit und ohne Alarmanlage?
+
+Hat das Hören von klassischer Musik oder Schlagermusik während des Lernens von Vokabeln einen unterschiedlichen Einfluss auf den Lernerfolg?
+
+### 3.2. Berechnung der Teststatistik
+
+Der t-Test für unabhängige Gruppen setzt Varianzhomogenität voraus. Dies wird in Kapitel 3.3. mit SPSS geprüft. Für die manuelle Berechnung der Teststatistik wird dies einfachheitshalber nicht geprüft.
+
+Bereits "von Auge" zeigt sich ein Unterschied zwischen den Mittelwerten (siehe Abbildung 1). Um zu überprüfen, ob dieser Unterschied statistisch signifikant ist, muss die dazugehörige Teststatistik berechnet werden. Die Verteilung der Teststatistik t folgt einer theoretischen t-Verteilung, deren Form sich in Abhängigkeit der Freiheitsgrade unterscheidet. Die dem Test zu Grunde liegende t-Verteilung gibt dem Test den Namen t-Test.
+
+### 3.3 Signifikanz der Teststatistik
+
+Der berechnete Wert muss auf Signifikanz geprüft werden. Dazu wird die Teststatistik mit dem kritischen Wert der durch die Freiheitsgrade bestimmten t-Verteilung verglichen werden. Dieser kritische Wert kann Tabellen entnommen werden. Abbildung zeigt einen Ausschnitt einer t-Tabelle, der einige kritische Werte für die Signifikanzniveaus .05 und .01 zeigt.
+
+4.	Deskriptive Statistiken
+==================================================
+
+Normalverteilung
+================
+```{r}
+library(reshape2)
+library(ggplot2)
+
+ggplot(TIPS, aes(x = tip)) +
+geom_histogram(color = "black", fill = "gold") +
+facet_grid(TIPS$sex)
+
+```
+
+Es liegt augenscheinlich eine Normalverteilung vor. Die Ränder sind kleiner als die Mitte.
+
+Boxplots
+========
+```{r}
+
+ggplot(TIPS, aes(x=X, y = tip )) +
+geom_boxplot() +
+facet_grid(TIPS$sex)
+
+```
+Der Boxplot zeigt, dass sowohl der Rechnungsbetrag als auch das Trinkgeld einige Ausreißer nach oben haben.
+
+```{r}
+library(abind, pos=24)
+library(e1071, pos=25)
+numSummary(TIPS[,"tip", drop=FALSE], groups=TIPS$sex, statistics=c("mean", "sd", "IQR", "quantiles", "skewness", 
+  "kurtosis"), quantiles=c(0,.25,.5,.75,1), type="2")
+
+
+```
+Im Mittel liegt der Rechnungsbetrag bei \$19,8 mit Standardabweichung von \$8,9 und die Höhe des Trinkgeldes im Mittel bei \$3,0 mit Standardabweichung von \$1,4.
+
+Erfüllte Voraussetzungen:
+
+• Die abhängige Variable Trinkgeld ist intervallskaliert.
+
+• Es liegt die unabhängige Variable Geschlecht vor, mittels der die beiden zu vergleichenden Gruppen gebildet werden
+
+• Das untersuchte Merkmal ist in den Grundgesamtheiten der beiden Gruppen normalverteilt (siehe Histogramme)
+
+• Homogenität der Varianzen: Die Gruppen kommen aus Grundgesamtheiten mit annähernd identischer Varianz (siehe Ergebnis Levene-Test)
+
+• Die einzelnen Messwerte sind voneinander unabhängig (das Verhalten einer Versuchsperson hat keinen Einfluss auf das Verhalten einer anderen)
+
+
+5.	Test auf Varianzhomogenität (Levene-Test)
+=============================================
+
+Der t-Test für unabhängige Gruppen setzt Varianzhomogenität voraus. Liegt Varianzheterogenität vor (also unterschiedliche Varianzen), so müssen unter anderem die Freiheitsgerade des t-Wertes angepasst werden. Ob die Varianzen nun homogen ("gleich") sind, lässt sich mit dem Levene-Test auf Varianzhomogenität prüfen.
+
+Der Levene-Test verwendet die Nullhypothese, dass sich die beiden Varianzen nicht unterscheiden. Daher bedeutet ein nicht signifikantes Ergebnis, dass sich die Varianzen nicht unterscheiden und also Varianzhomogenität vorliegt. Ist der Test signifikant, so wird von Varianzheterogenität ausgegangen.
+
+```{r}
+with(TIPS, tapply(tip, sex, var, na.rm=TRUE))
+leveneTest(tip ~ sex, data=TIPS, center="mean")
+
+```
+Für das Beispiel gibt R einen F-Wert von 2.36 und eine dazugehörige Signifikanz von p = .126 aus. Im Beispiel liegt also Varianzhomogenität vor (Levene-Test: F(1,242) = 2.36, p = .126, n = 244). In unserem Beispiel ist das Ergebnis des Leven-Tests (p=0,126) nicht signifikant, da es höher als der Wert 0,05 ist. Daher brauchen wir keine Welch-Korrektur durchzuführen.
+
+6.	Ergebnisse des t-Tests für unabhängige Stichproben
+======================================================
+
+```{r}
+leveneTest(tip ~ sex, data=TIPS, center="mean")
+t.test(tip~sex, alternative='two.sided', conf.level=.95, var.equal=TRUE, data=TIPS)
+
+```
+
+Da im unserem Beispiel Varianzhomogenität vorliegt, wird die Zeile "Varianzen sind gleich" betrachtet (var.equal=TRUE - levene Test): Die Teststatistik beträgt t=-1.3879 und der zugehörige Signifikanzwert p = 0.1665. Damit ist der Unterschied ist night signifikant: Die Mittelwerte der beiden Arten der selbstständigkeit unterscheiden sich (t(242) = -1.3879, p = .1665).
+
+7. Berechnung der Effektstärke
+==============================
+
+```{r}
+
+t_sq <- (-1.3879)^2
+t_sq
+
+d_f <- 242
+d_f
+
+r <- sqrt(t_sq/(t_sq+d_f))
+r
+
+```  
+
+Um die Bedeutsamkeit eines Ergebnisses zu beurteilen, werden Effektstärken berechnet. Im Beispiel ist der Mittelwertsunterschied zwar signifikant, doch es stellt sich die Frage, ob der Unterschied gross genug ist, um ihn als bedeutend einzustufen.
+
+Es gibt verschiedene Arten die Effektstärke zu messen. Zu den bekanntesten zählen die Effektstärke von Cohen (d) und der Korrelationskoeffizient (r) von Pearson. Der Korrelationskoeffizient eignet sich sehr gut, da die Effektstärke dabei immer zwischen 0 (kein Effekt) und 1 (maximaler Effekt) liegt. Wenn sich jedoch die Gruppen hinsichtlich ihrer Grösse stark unterscheiden, wird empfohlen, d von Cohen zu wählen, da r durch die Grössenunterschiede verzerrt werden kann.
+
+Zur Berechnung des Korrelationskoeffizienten r werden der t-Wert und die Freiheitsgrade (df) verwendet:
+
+R = sqrt(t²/t²+df)
+
+Für das obige Beispiel ergibt das folgende Effektstärke:
+
+R = 0.08
+
+Zur Beurteilung der Grösse des Effektes dient die Einteilung von Cohen (1992):
+
+r = .10 entspricht einem schwachen Effekt
+r = .30 entspricht einem mittleren Effekt
+r = .50 entspricht einem starken Effekt
+
+Im Rahmen des t-Tests für unabhängige Stichprobe berechnen wir nach Pearson und interpretieren nach Cohen(1992).
+
+Damit entspricht eine Effektstärke von 0.08 keinem Effekt.
+
+8. Eine Aussage
+===============
+
+Das mittlere gezahlte Trinkgeld von Frauen liegt bei \$2.8 mit einer Standardabweichung von \$1.16. Das mittlere gezahlte Trinkgeld von Männern liegt bei $3.09 mit einer Standardabweichung von \$1.49. 
+
+Die Teststatistik beträgt t=-1.39 und der zugehörige Signifikanzwert p = .167. Der T-Test ergibt somit, dass sich die Mittelwerte der beiden Geschlechter (t(242) = -1.39, p = .167) nicht signifikant unterscheiden. 
+
+Es zeigt sich, dass der t-Test nicht signifikant ist, was sich auch in der nicht vorhandenen Effektstärke wiederspiegelt. Daher wird H0 angenommen und H1 verworfen, es gibt keinen Unterschied zwischen den Geschlechtern bei der Höhe des Trinkgeldes.
+
+
+
