@@ -2,7 +2,9 @@
 title: "t-Tests für unabhängige Stichproben"
 author: "Ozgur Polat und Kathrin Einzmann"
 date: "09 01 2020"
-output: html_document
+output:
+  word_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -50,6 +52,14 @@ Der t-Test für abhängige Stichproben überprüft, ob die Mittelwerte zweier ab
 
 Die Fragestellung des t-Tests für abhängige Stichproben wird oft so verkürzt: "Unterscheiden sich die Mittelwerte von zwei abhängigen Stichproben?"
 
+Möglichkeiten der Paarung gibt es:
+
+• Messwiederholung (in unserem Fall): Die Messwerte stammen von der gleichen Person, zum Beispiel bei einer Messung vor einem Treatment und nach einem Treatment oder wenn verschiedene Treatments auf die gleiche Person angewendet werden und verglichen werden sollen.
+
+• Natürliche Paare: Die Messwerte stammen von verschiedenen Personen, diese gehören aber zusammen, zum Beispiel Ehefrau – Ehemann, Psychologe – Patient, Anwalt – Klient, Eigentümer – Mieter oder Zwillinge.
+
+• Matching: Die Messwerte stammen von verschiedenen Personen, die einander zugeordnet wurden, zum Beispiel aufgrund eines vergleichbaren Werts auf einer Drittvariablen (die nicht im Zentrum der Untersuchung steht).
+
 4.	Deskriptive Statistiken und Korrelation
 ===========================================
 
@@ -78,6 +88,7 @@ Ergebnis: Die beiden Stichproben sind nicht normalverteilt. Es soll aber geprüf
 boxplot(morning$Pulse,evening$Pulse,names=c("Morgen","Abends"), col=c('powderblue', 'mistyrose'),main="Puls")
 
 ```
+
 Der Boxplot zeigt, dass sowohl der Rechnungsbetrag als auch das Trinkgeld einige Ausreißer nach oben haben.
 
 <--scatterplot(m_pulse,e_pulse, main = "Morgenpuls ~ Abendpuls",xlab = "Morgenpuls", ylab = "Abendpuls",
@@ -90,6 +101,7 @@ pch = 21, frame = FALSE, col='darkblue')
 abline(lm( e_pulse ~ m_pulse, data = PULSE), col = "orange")
 
 ```
+
 Es zeigt sich augenscheinlich eine schwach positive lineare Abhängigkeit zwischen den Werten zu den beiden Tageszeiten.
 
 ### Korrelation
@@ -155,6 +167,7 @@ R <- sqrt(t_value^2/(t_value^2+df))
 R
 
 ```
+
 Zur Beurteilung der Grösse des Effektes dient die Einteilung von Cohen (1992):
 
 r = .10 entspricht einem schwachen Effekt

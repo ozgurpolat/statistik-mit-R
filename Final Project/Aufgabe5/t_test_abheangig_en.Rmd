@@ -1,0 +1,181 @@
+---
+title: "t-tests for independent samples"
+author: "Ozgur Polat und Kathrin Einzmann"
+date: "09 01 2020"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(Rcmdr)
+library(RcmdrMisc)
+#library(RcmdrPlugin.plotByGroup)
+library(multcomp)
+library(foreign)
+
+PULSE <- read.csv("RepeatedPulse.csv")
+
+```
+
+## Data Record: RepeatedPulse.csv
+
+Var 1 = pulse frequency (dependent, interval scaled)
+
+Var 2 = Time of day (morning/evening, independently nominally scaled)
+
+1. Hypothese:
+==============
+
+H1: There is a difference in heart rate between the two times (morning and evening). 
+
+H0: There is no difference in heart rate between the two times (morning and evening).
+
+
+2.	Requirements of the t-test for dependent samples
+====================================================
+
+- The dependent variable is interval-scaled.
+
+- The independent variable is nominally scaled and has two characteristic values. Our independent variable must be categorical, therefore nominally scaled, and must have two instances. The two values refer to the two groups we compare and are often, but not necessarily, measurement points (e.g. measurement point #1 compared to measurement point #2). 
+
+- Normal distribution: The paired t-test does not expect the data in the two groups to be normally distributed, but it does expect the differences between the two groups. More precisely, this assumption refers to the residuals and not to the data itself. 
+
+- Dependence of the measurements: The combined t-test compares two groups. Typically, the same person will compare at two different times. The dependency must be given in advance. 
+
+
+3.	Basic concepts: What is t-test for dependent samples?
+=========================================================
+
+The t-test for dependent samples checks whether the mean values of two dependent/paired samples are different.
+
+The question of the dependent sample t-test is often abbreviated to "Do the means of two dependent samples differ?
+
+Pairing options are available:
+
+- Repeat measurement (in our case): The measured values come from the same person, for example, when measuring before a treatment and after a treatment or when different treatments are applied to the same person and are to be compared.
+
+- Natural couples: The readings are from different people, but they belong together, for example wife - husband, psychologist - patient, lawyer - client, owner - tenant or twins.
+
+- Matching: The measurements come from different persons, but they belong together, for example, due to a comparable value on a third variable (which is not the focus of the study).
+
+4.	Descriptive statistics and correlation
+==========================================
+
+### Normal distribution
+```{r}
+library(dplyr)
+morning<- PULSE%>% filter(Time=="morning")
+evening <- PULSE%>% filter(Time=="evening")
+
+m_pulse <- (filter(PULSE, Time=="morning")$Pulse)
+e_pulse <- (filter(PULSE, Time=="evening")$Pulse)
+
+diff_pulse <- e_pulse - m_pulse
+
+hist(m_pulse, xlab = "Puls am Morgen", ylab = "Häufigkeit", col="gold", nclass = 5)
+hist(e_pulse, xlab = "Puls am Abend", ylab = "Häufigkeit", col="lightblue", nclass = 5)
+hist(diff_pulse, xlab = "Differenz: Puls am Morgen ~ Abend", ylab = "Häufigkeit", col = "pink", nclass = 5)
+
+```
+
+Result: The two samples are not normally distributed. However, you should check whether the distribution of the differences between the two measured values is normal. This is the case, the differences are normally distributed.
+
+### Boxplots
+```{r}
+
+boxplot(morning$Pulse,evening$Pulse,names=c("Morgen","Abends"), col=c('powderblue', 'mistyrose'),main="Puls")
+
+```
+
+The box plot shows that both the bill amount and the tip have some outliers upwards.
+
+```{r}
+
+plot(m_pulse,e_pulse, main = "Morgenpuls ~ Abendpuls",xlab = "Morgenpuls", ylab = "Abendpuls",
+pch = 21, frame = FALSE, col='darkblue')
+abline(lm( e_pulse ~ m_pulse, data = PULSE), col = "orange")
+
+```
+Apparently there is a weakly positive linear dependence between the values at the two times of day.
+
+### Correlation
+
+```{r}
+cor <- cor.test(x=morning$Pulse, y= evening$Pulse, method = "pearson")
+cor
+names(cor)
+r <- cor$estimate
+r
+cor$p.value
+
+```
+
+Result of the correlation analysis: The values for the pulse at the two measurement points do not correlate significantly for an error level alpha<=0.05 with p=0.7821 (r= 0.057, n=26). The missing correlation values are due to the experimental design, as it is not properly connected.
+
+```{r}
+library(abind, pos=24)
+library(e1071, pos=25)
+numSummary(PULSE[,"Pulse", drop=FALSE], groups=PULSE$Time, statistics=c("mean", "sd", "IQR", "quantiles", "skewness", "kurtosis"), quantiles=c(0,.25,.5,.75,1), type="2")
+
+```
+
+Result of correlation analysis: The values for the pulse at the two measurement points do not correlate significantly for an error level alpha<=0.05 with p=0.7821 (r= 0.057, n=26).
+
+Requirements fulfilled:
+
+- The dependent variable Pulse is interval scaled. 
+
+- The independent variable time of day is nominally scaled and has two values (morning/evening). 
+
+- Normal distribution: The paired t-test does not expect the data in the two groups to be normally distributed, but the differences between the two groups are. This is given (see Histogram of Differences)
+
+- dependence of the measurements: Here the linked t-test compares the two points in time, morning and evening. The dependence is therefore given.
+
+5.	Results of the t-test for dependent samples
+===============================================
+
+```{r}
+t_test <- with(PULSE, (t.test(m_pulse, e_pulse, alternative='two.sided', conf.level=.95, 
+  paired=TRUE)))
+
+t_test
+
+```
+
+The test statistic is t = -6.3286 and the corresponding significance value p = .000. Thus the difference is significant: The mean values of the pulse at the two measurement times (morning and evening) differ (t = -6.3286, p = .000, n = 26).
+
+6.	Calculation of the effect strength
+======================================
+
+To assess the significance of a result, effect strengths are calculated. In the example, the difference in mean is significant, but the question is whether the difference is large enough to be considered significant.
+
+There are different ways to measure effect sizes. Among the best known are the effect size of Cohen (d) and the correlation coefficient (r) of Pearson. The Correlation Coefficient is very suitable, as the effect strength is always between 0 (no effect) and 1 (maximum effect). However, if the groups differ greatly in size, it is recommended to choose d by Cohen, since r can be distorted by the differences in size.
+
+```{r}
+t_value <- t_test$statistic
+t_value
+
+df <- t_test$parameter
+df
+
+R <- sqrt(t_value^2/(t_value^2+df))
+R
+
+```
+Cohen's classification (1992) is used to assess the magnitude of the effect:
+
+r = .10 entspricht einem schwachen Effekt
+r = .30 entspricht einem mittleren Effekt
+r = .50 entspricht einem starken Effekt
+
+Thus an effect strength of 0.78 corresponds to a strong effect.
+
+7.	A statement
+===============
+It is shown that the heart rate measured at two points in time (morning and evening) differ statistically significantly (t = -6,3286, p = .000, n = 26). The morning pulse is lower (mean value = 72.2351, SD = 1.92) than the evening pulse (M = 75.69, SD = 2.13). The effect strength according to Cohen (1992) is r = 0.785 and thus corresponds to a strong effect.H0 is therefore rejected and H1 is assumed.
+
+
+
