@@ -2,7 +2,10 @@
 title: "Einfaktorielle Varianzanalyse (ANOVA)"
 author: "Ozgur Polat und Kathrin Einzmann"
 date: "09 01 2020"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -74,7 +77,10 @@ Es liegt augenscheinlich eine Normalverteilung vor. Die Ränder sind kleiner als
 
 Boxplot(total_bill~day2, data=TIPS, id=list(method="identify"), col=c("gold", "lightblue", "lightgreen", "pink"))
 
+Boxplot(tip~day2, data=TIPS, id=list(method="identify"), col=c("gold", "lightblue", "lightgreen", "pink"))
+
 ```
+
 Der Boxplot zeigt, dass sowohl der Rechnungsbetrag als auch das Trinkgeld einige Ausreißer nach oben haben.
 
 ### Plot für die Mittelwerte
@@ -84,6 +90,7 @@ Der Boxplot zeigt, dass sowohl der Rechnungsbetrag als auch das Trinkgeld einige
 with(TIPS, plotMeans(total_bill, day2, error.bars="se", connect=TRUE, xlab='Tag', ylab="Gesamtrechnungsmittelwert"))
 
 ```
+
 Wie der Plot der Mittelwerte erkennen lässt, bestehen bezüglich der vier Wochentage Unterschiede im Mittelwert der Rechnungshöhe.
 
 ```{r}
@@ -116,6 +123,7 @@ with(TIPS, tapply(total_bill, day2, var, na.rm=TRUE))
 leveneTest(total_bill ~ day2, data=TIPS, center="mean")
 
 ```
+
 Der Levene-Test prüft die Nullhypothese, dass die Varianzen der Gruppen sich nicht unterscheiden. Ist der Levene-Test nicht signifikant, so kann von homogenen Varianzen ausgegangen. Wäre der Levene-Test jedoch signifikant, so wäre eine der Grundvoraussetzungen der Varianzanalyse verletzt. Gegen leichte Verletzungen gilt die Varianzanalyse als robust; vor allem bei genügend grossen und etwa gleich grossen Gruppen sind Verletzungen nicht problematisch. Bei ungleich grossen Gruppen führt eine starke Verletzung der Varianzhomogenität zu einer Verzerrung des F-Tests. Alternativ können dann auf den den Welch-Test zurückgegriffen werden. Dabei handelt es sich um adjustierte F-Tests.
 
 Im vorliegenden Beispiel ist der Levene-Test nicht signifikant (F(3,240) = 0.692, p = 0.557, so dass 
@@ -132,6 +140,7 @@ summary(AnovaModel.1)
 with(TIPS, numSummary(total_bill, groups=day, statistics=c("mean", "sd")))
 
 ```
+
 Es ist zu erkennen, dass das Gesamtmodel signifikant wird F(3,240) = 2.767 , p = .0425).
 
 ### Das partielle Eta-Quadrat
@@ -156,6 +165,7 @@ colnames(.effectSize) <- c("part. eta sq.")
 .effectSize
 
 ```
+
 Im vorliegenden Beispiel beträgt das partielle Eta-Quadrat .033. Das heisst, es wird 3.3% der Variation in gezahlten Rechnungsbetrag durch die vier Wochentage erklärt.
 
 
