@@ -13,10 +13,10 @@ beschreibt eine perfekt negative Korrelation und ein Wert von +1 eine perfekt po
 Zusammenhang zwischen den Variablen vor.
 
 ## Beispielfragestellungen
-Gibt es einen Zusammenhang zwischen IQ und Veranlagung?
-Eine Gruppe Senioren machen verschiedene Sportlichkeittests. Gibt es einen Zusammenhang zwischen den Resultaten der beiden Sporttests?
-Besteht ein Zusammenhang zwischen Mathefähigkeiten und der täglichen Matheübung?
-Gibt es einen Zusammenhang zwischen dem Unkraut im Rasen und Anzahl Regentage?
+* Gibt es einen Zusammenhang zwischen IQ und Veranlagung?
+* Eine Gruppe Senioren machen verschiedene Sportlichkeittests. Gibt es einen Zusammenhang zwischen den Resultaten der beiden Sporttests?
+* Besteht ein Zusammenhang zwischen Mathefähigkeiten und der täglichen Matheübung?
+* Gibt es einen Zusammenhang zwischen dem Unkraut im Rasen und Anzahl Regentage?
 
 ## Voraussetzungen
 *	Die Variablen sind mindestens intervallskaliert
