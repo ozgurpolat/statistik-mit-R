@@ -1,4 +1,4 @@
-# Statistik mit R
+# Statistik with R
 
 During this statistics and data analysis training with R, I studied the following topics and completed exercises and a final project:
 
